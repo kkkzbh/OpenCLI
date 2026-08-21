@@ -171,6 +171,7 @@ When the site you need is not yet covered, use the `opencli-adapter-author` skil
 |----------|---------|-------------|
 | `OPENCLI_PROFILE` | — | Browser Bridge profile alias/contextId to use when multiple Chrome profiles are connected |
 | `OPENCLI_WINDOW` | command default | Set to `foreground` or `background` to override Browser Bridge window placement. Browser-backed commands also accept `--window <foreground\|background>`. |
+| `OPENCLI_TAB_PLACEMENT` | `existing-window` | Set to `owned-container` to use the legacy OpenCLI-owned window/container. The default creates owned tabs in an already-open normal Chrome window and falls back to an owned window only when no normal window exists. |
 | `OPENCLI_BROWSER_CONNECT_TIMEOUT` | `45` | Seconds to wait for browser connection |
 | `OPENCLI_BROWSER_COMMAND_TIMEOUT` | `60` | Seconds to wait for a single browser command |
 | `OPENCLI_CDP_ENDPOINT` | — | Chrome DevTools Protocol endpoint for remote browser or Electron apps |

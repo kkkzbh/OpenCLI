@@ -22,6 +22,8 @@ export type Action =
   | 'cdp'
   | 'frames';
 
+export type TabPlacement = 'existing-window' | 'owned-container';
+
 export interface Command {
   /** Unique request ID */
   id: string;
@@ -71,6 +73,8 @@ export interface Command {
   cdpParams?: Record<string, unknown>;
   /** Window foreground/background policy for owned Browser Bridge containers. */
   windowMode?: 'foreground' | 'background';
+  /** Owned-tab placement policy. Existing Chrome windows are preferred. */
+  tabPlacement?: TabPlacement;
   /** Custom idle timeout in seconds for this session. Overrides the default. */
   idleTimeout?: number;
   /** Frame index for cross-frame operations (0-based, from 'frames' action) */

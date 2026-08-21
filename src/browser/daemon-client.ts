@@ -10,6 +10,7 @@ import { COMMAND_RESULT_UNKNOWN_CODE, COMMAND_RESULT_UNKNOWN_HINT } from '../dae
 import { classifyBrowserError } from './errors.js';
 import { profileRouteParams, resolveProfileSelection } from './profile.js';
 import { DEFAULT_BROWSER_CONNECT_TIMEOUT } from './config.js';
+import { resolveBrowserTabPlacement, type BrowserTabPlacement } from './tab-placement.js';
 import { ensureBrowserBridgeReady } from './daemon-lifecycle.js';
 import { isPreDispatchError } from './bridge-readiness.js';
 import {
@@ -235,6 +236,8 @@ export interface DaemonCommand {
   cdpParams?: Record<string, unknown>;
   /** Window foreground/background policy for owned Browser Bridge containers. */
   windowMode?: 'foreground' | 'background';
+  /** Owned-tab placement policy. Existing Chrome windows are preferred. */
+  tabPlacement?: BrowserTabPlacement;
   /** Custom idle timeout in seconds for this session. Overrides the default. */
   idleTimeout?: number;
   /** Frame index for cross-frame operations (0-based, from 'frames' action) */
@@ -340,6 +343,7 @@ async function sendCommandRaw(
   const contextId = routing.contextId;
   const preferredContextId = routing.preferredContextId;
   const windowMode = params.windowMode ?? envWindowMode;
+  const tabPlacement = params.tabPlacement ?? resolveBrowserTabPlacement();
 
   let id = generateId();
   let ensureUsed = false;
@@ -381,6 +385,7 @@ async function sendCommandRaw(
       ...(contextId && { contextId }),
       ...(preferredContextId && { preferredContextId }),
       ...(windowMode && { windowMode }),
+      tabPlacement,
       // Carry the run identity so the daemon can acquire/refresh the write
       // lease on the persistent site session. The same runId across every exec
       // of one command is the heartbeat that keeps a long-running holder alive.
