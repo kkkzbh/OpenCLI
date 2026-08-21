@@ -944,18 +944,33 @@ async function ensureOwnedContainerGroupUnlocked(
  * explicit owned-container path is used.
  */
 async function selectExistingNormalWindow(leaseKey: string): Promise<number | null> {
-  const getLastFocused = (chrome.windows as unknown as {
+  const windowsApi = chrome.windows as unknown as {
     getLastFocused?: (options?: { windowTypes?: string[] }) => Promise<chrome.windows.Window | undefined>;
-  }).getLastFocused;
-  if (typeof getLastFocused !== 'function') return null;
+    getAll?: (options?: { windowTypes?: string[] }) => Promise<chrome.windows.Window[]>;
+  };
+  const getLastFocused = windowsApi.getLastFocused;
+  const getAll = windowsApi.getAll;
   try {
-    const focused = await getLastFocused({ windowTypes: ['normal'] });
-    if (typeof focused?.id !== 'number' || (focused.type !== undefined && focused.type !== 'normal')) return null;
-    await focusOwnedWindowIfRequested(focused.id, getWindowMode(leaseKey));
-    return focused.id;
+    if (typeof getLastFocused === 'function') {
+      const focused = await getLastFocused({ windowTypes: ['normal'] });
+      if (typeof focused?.id === 'number' && (focused.type === undefined || focused.type === 'normal')) {
+        await focusOwnedWindowIfRequested(focused.id, getWindowMode(leaseKey));
+        return focused.id;
+      }
+    }
+    if (typeof getAll === 'function') {
+      const windows = await getAll({ windowTypes: ['normal'] });
+      const normal = windows.find((window) => typeof window.id === 'number' && (window.type === undefined || window.type === 'normal'));
+      if (typeof normal?.id === 'number') {
+        await focusOwnedWindowIfRequested(normal.id, getWindowMode(leaseKey));
+        return normal.id;
+      }
+    }
   } catch {
-    return null;
+    // A transient Chrome API failure is a direct no-window result. The caller
+    // owns the explicit fallback to an OpenCLI-created window.
   }
+  return null;
 }
 
 async function registerOwnedTabLease(

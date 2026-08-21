@@ -1407,16 +1407,28 @@ async function ensureOwnedContainerGroupUnlocked(role, fallbackWindowId, ids) {
   }
 }
 async function selectExistingNormalWindow(leaseKey) {
-  const getLastFocused = chrome.windows.getLastFocused;
-  if (typeof getLastFocused !== "function") return null;
+  const windowsApi = chrome.windows;
+  const getLastFocused = windowsApi.getLastFocused;
+  const getAll = windowsApi.getAll;
   try {
-    const focused = await getLastFocused({ windowTypes: ["normal"] });
-    if (typeof focused?.id !== "number" || focused.type !== void 0 && focused.type !== "normal") return null;
-    await focusOwnedWindowIfRequested(focused.id, getWindowMode(leaseKey));
-    return focused.id;
+    if (typeof getLastFocused === "function") {
+      const focused = await getLastFocused({ windowTypes: ["normal"] });
+      if (typeof focused?.id === "number" && (focused.type === void 0 || focused.type === "normal")) {
+        await focusOwnedWindowIfRequested(focused.id, getWindowMode(leaseKey));
+        return focused.id;
+      }
+    }
+    if (typeof getAll === "function") {
+      const windows = await getAll({ windowTypes: ["normal"] });
+      const normal = windows.find((window) => typeof window.id === "number" && (window.type === void 0 || window.type === "normal"));
+      if (typeof normal?.id === "number") {
+        await focusOwnedWindowIfRequested(normal.id, getWindowMode(leaseKey));
+        return normal.id;
+      }
+    }
   } catch {
-    return null;
   }
+  return null;
 }
 async function registerOwnedTabLease(leaseKey, tab, tabPlacement, ownsWindow) {
   const tabId = tab.id;

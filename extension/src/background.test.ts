@@ -662,6 +662,27 @@ describe('background tab isolation', () => {
     }));
   });
 
+  it('uses another normal Chrome window when the last-focused window is a popup', async () => {
+    const { chrome, create } = createChromeMock();
+    (chrome.windows as any).getLastFocused = vi.fn(async () => ({ id: 99, type: 'popup', focused: true }));
+    (chrome.windows as any).getAll = vi.fn(async () => [{ id: 2, type: 'normal', focused: false }]);
+    vi.stubGlobal('chrome', chrome);
+
+    const mod = await import('./background');
+    const result = await mod.__test__.handleCommand({
+      id: 'normal-window-fallback',
+      action: 'tabs',
+      op: 'new',
+      session: 'popup-focused',
+      surface: 'adapter',
+      url: 'https://normal.example',
+    });
+
+    expect(result).toEqual(expect.objectContaining({ ok: true }));
+    expect(create).toHaveBeenCalledWith({ windowId: 2, url: 'https://normal.example', active: false });
+    expect(chrome.windows.create).not.toHaveBeenCalled();
+  });
+
   it('cleans every owned tab in an existing Chrome window without touching the host window', async () => {
     const { chrome } = createChromeMock();
     (chrome.windows as any).getLastFocused = vi.fn(async () => ({ id: 2, type: 'normal', focused: true }));
